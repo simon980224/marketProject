@@ -3,6 +3,15 @@ import pygsheets
 import glob
 import warnings
 
+def excel_col(col):
+    """將列數字轉換為Excel列標籤"""
+    col_str = ""
+    div = col
+    while div:
+        (div, mod) = divmod(div - 1, 26)  # 減1是因為Excel列是從1開始計算，而不是從0
+        col_str = chr(mod + 65) + col_str
+    return col_str
+
 warnings.filterwarnings("ignore", category=UserWarning, module='urllib3')
 
 # Google Sheets 授權
@@ -181,7 +190,7 @@ for account, details in market_data.items():
         
         # 寫入標題和公式
         wks.update_value((3, start_col), '總計')
-        sum_formula = f"=SUM({chr(64 + start_col + 1)}5:{chr(64 + start_col + 1)}1000)"
+        sum_formula = f"=SUM({excel_col(start_col + 1)}5:{excel_col(start_col + 1)}1000)"
         wks.update_value((3, start_col + 1), sum_formula)
         wks.update_value((4, start_col), '日期')
         wks.update_value((4, start_col + 1), '轉出')
@@ -195,16 +204,16 @@ for account, details in market_data.items():
         
         # 加入額外的標題和公式
         wks.update_value((3, start_col + 2), '總計')
-        sum_formula_in = f"=SUM({chr(64 + start_col + 3)}5:{chr(64 + start_col + 3)}1000)"
+        sum_formula_in = f"=SUM({excel_col(start_col + 3)}5:{excel_col(start_col + 3)}1000)"
         wks.update_value((3, start_col + 3), sum_formula_in)
         wks.update_value((4, start_col + 2), '日期')
         wks.update_value((4, start_col + 3), '轉入')
         wks.update_value((3, start_col + 4), '備註')  
 
         # 合併儲存格
-        wks.merge_cells(start=f'{chr(64 + start_col)}1', end=f'{chr(64 + start_col + 4)}1', merge_type='MERGE_ALL')
-        wks.merge_cells(start=f'{chr(64 + start_col)}2', end=f'{chr(64 + start_col + 4)}2', merge_type='MERGE_ALL')  
-        wks.merge_cells(start=f'{chr(64 + start_col + 4)}3', end=f'{chr(64 + start_col + 4)}4', merge_type='MERGE_ALL')
+        wks.merge_cells(start=f'{excel_col(start_col)}1', end=f'{excel_col(start_col + 4)}1', merge_type='MERGE_ALL')
+        wks.merge_cells(start=f'{excel_col(start_col)}2', end=f'{excel_col(start_col + 4)}2', merge_type='MERGE_ALL')  
+        wks.merge_cells(start=f'{excel_col(start_col + 4)}3', end=f'{excel_col(start_col + 4)}4', merge_type='MERGE_ALL')
         
         # 移動到右邊五列
         start_col += 5

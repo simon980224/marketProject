@@ -96,6 +96,10 @@ for file in market_files:
         if detail[1] == '已提款金額' and detail[4] == '支出' and detail[6] != '失敗':
             date = detail[0][:10].replace('-', '/')  # 轉換日期格式
             amount = abs(detail[5])  # 確保金額為正數
+            if amount > 1000:
+                amount = f"{amount:,.0f}"
+            else:
+                amount = str(amount)
             result.append([date, amount])
 
     # 將結果排序並存儲於字典

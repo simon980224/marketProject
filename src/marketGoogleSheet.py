@@ -16,9 +16,9 @@ warnings.filterwarnings("ignore", category=UserWarning, module='urllib3')
 # Google Sheets 授權
 key = "/Users/chenyaoxuan/Desktop/myproject/marketProject/astute-harmony-425407-p9-826d675d86f9.json"
 gc = pygsheets.authorize(service_file=key)
-url = "https://docs.google.com/spreadsheets/d/1DsltZgJorvsgEVJnRAJ6NSR17PpNFYwN8RmJmGjiYWw/edit#gid=381406896"
+url = "https://docs.google.com/spreadsheets/d/1SGNEuh-FjiBxoxH73NcDELDGbSO71vhc7DbkGuKk4wo/edit#gid=1894821213"
 sheet = gc.open_by_url(url)
-wks = sheet[0]
+wks = sheet.worksheet('title', '測試')
 
 # 讀取數據的文件夾路徑
 folder_path = '/Users/chenyaoxuan/Desktop/myproject/marketProject/marketExcel/'

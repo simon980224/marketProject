@@ -105,6 +105,9 @@ for file in market_files:
     # 將結果排序並存儲於字典
     market_data[market_acc] = sorted(result, key=lambda x: x[0])
 
+# 將 market_data 按照 user_data 中的用戶編號排序
+market_data = {k: market_data[k] for k in sorted(market_data.keys(), key=lambda x: list(user_data[x].keys())[0])}
+
 # 清空工作表
 wks.clear()
 
@@ -178,7 +181,6 @@ for col in range(1, cols_to_format + 1):
     head_format.update_borders(top=True, bottom=True, left=True, right=True, style='SOLID')
     head02_format.update_borders(top=True, bottom=True, left=True, right=True, style='SOLID')
     body_format.update_borders(top=True, bottom=True, left=True, right=True, style='SOLID')
-
 
 # 設定初始位置
 start_col = 1

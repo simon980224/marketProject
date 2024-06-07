@@ -75,7 +75,7 @@ market_data = {}
 
 # 讀取每個 Excel 文件並處理數據
 for file in market_files:
-    df = pd.read_excel(file, engine='xlrd')
+    df = pd.read_excel(file)
     data_list = df.values.tolist()
 
     market_acc = data_list[4][1]

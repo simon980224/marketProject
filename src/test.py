@@ -6,9 +6,8 @@ import warnings
 def excel_col(col):
     """將列數字轉換為Excel列標籤"""
     col_str = ""
-    div = col
-    while div:
-        (div, mod) = divmod(div - 1, 26)  # 減1是因為Excel列是從1開始計算，而不是從0
+    while col:
+        (col, mod) = divmod(col - 1, 26)  # 減1是因為Excel列是從1開始計算，而不是從0
         col_str = chr(mod + 65) + col_str
     return col_str
 
@@ -55,6 +54,7 @@ user_data = {
     "magical_store": {"121": "林顯明"},
     "z7tfd2a_7f": {"129": "張文騰"},
     "5v5mkughjk": {"156": "賴慧淑"},
+    "uurk46u_l8": {"158": "陳允妍"},
     "kf_1ky5z1m": {"161": "陳冠霖"},
     "j401zjn1zq": {"162": "蔡阜澄"},
     "0lleyve_zl": {"163": "劉彥詢"},
@@ -146,54 +146,47 @@ normal_template.set_text_format('fontFamily', 'Arial')
 normal_template.horizontal_alignment = pygsheets.HorizontalAlignment.CENTER
 normal_template.vertical_alignment = pygsheets.VerticalAlignment.MIDDLE
 
-# 計算需要格式化的列數
-cols_to_format = len(market_data) * 5
-
-# 批量應用格式
-for col in range(1, cols_to_format + 1):
-    col_mod = (col - 1) % 5
-
-    start_addr = pygsheets.format_addr((1, col))
-    end_addr = pygsheets.format_addr((2, col))
-    head_format = pygsheets.datarange.DataRange(start=start_addr, end=end_addr, worksheet=wks)
-    head_format.apply_format(normal_template)
-
-    start_addr = pygsheets.format_addr((3, col))
-    end_addr = pygsheets.format_addr((4, col))
-    head02_format = pygsheets.datarange.DataRange(start=start_addr, end=end_addr, worksheet=wks)
-
-    start_addr = pygsheets.format_addr((3, col))
-    end_addr = pygsheets.format_addr((1000, col))
-    body_format = pygsheets.datarange.DataRange(start=start_addr, end=end_addr, worksheet=wks)
-
-    start_addr = pygsheets.format_addr((1, col))
-    end_addr = pygsheets.format_addr((1000, col))
-
-    if col_mod == 0 or col_mod == 2:   # A, C, F, H...
-        body_format.apply_format(gray_background)
-    elif col_mod == 1:  # B, G...
-        body_format.apply_format(red_text)
-    elif col_mod == 3:  # D, I...
-        body_format.apply_format(blue_text)
-    elif col_mod == 4:  # E, J...
-        body_format.apply_format(normal_template)
-    # 為每一列添加四周邊框
-    head_format.update_borders(top=True, bottom=True, left=True, right=True, style='SOLID')
-    head02_format.update_borders(top=True, bottom=True, left=True, right=True, style='SOLID')
-    body_format.update_borders(top=True, bottom=True, left=True, right=True, style='SOLID')
-
 # 設定初始位置
 start_col = 1
 
-# 寫入數據
+# 寫入數據並格式化
 for account, details in market_data.items():
-    print(user_data[account].values())
+    # 批量應用格式
+    for col in range(start_col, start_col + 5):
+        col_mod = (col - start_col) % 5
+        start_addr = pygsheets.format_addr((1, col))
+        end_addr = pygsheets.format_addr((1000, col))
+        range_format = pygsheets.datarange.DataRange(start=start_addr, end=end_addr, worksheet=wks)
+        
+        if col_mod == 0 or col_mod == 2:  # A, C...
+            range_format.apply_format(gray_background)
+        elif col_mod == 1:  # B...
+            range_format.apply_format(red_text)
+        elif col_mod == 3:  # D...
+            range_format.apply_format(blue_text)
+        elif col_mod == 4:  # E...
+            range_format.apply_format(normal_template)
+
+        start_addr = pygsheets.format_addr((1, col))
+        end_addr = pygsheets.format_addr((2, col))
+        head_format = pygsheets.datarange.DataRange(start=start_addr, end=end_addr, worksheet=wks)
+        head_format.update_borders(top=True, bottom=True, left=True, right=True, style='SOLID')
+
+        start_addr = pygsheets.format_addr((3, col))
+        end_addr = pygsheets.format_addr((4, col))
+        head02_format = pygsheets.datarange.DataRange(start=start_addr, end=end_addr, worksheet=wks)
+        head02_format.update_borders(top=True, bottom=True, left=True, right=True, style='SOLID')
+
+        range_format.update_borders(top=True, bottom=True, left=True, right=True, style='SOLID')
+
     if account in user_data:
-        # 寫入用戶編號和名稱
         user_info = user_data[account]
+        print(user_info)
+
+        # 寫入用戶編號和名稱
         wks.update_value((1, start_col), list(user_info.keys())[0])
         wks.update_value((2, start_col), list(user_info.values())[0])
-        
+
         # 寫入標題和公式
         wks.update_value((3, start_col), '總計')
         sum_formula = f"=SUM({excel_col(start_col + 1)}5:{excel_col(start_col + 1)}1000)"
@@ -214,13 +207,13 @@ for account, details in market_data.items():
         wks.update_value((3, start_col + 3), sum_formula_in)
         wks.update_value((4, start_col + 2), '日期')
         wks.update_value((4, start_col + 3), '轉入')
-        wks.update_value((3, start_col + 4), '備註')  
+        wks.update_value((3, start_col + 4), '備註')
 
         # 合併儲存格
         wks.merge_cells(start=f'{excel_col(start_col)}1', end=f'{excel_col(start_col + 4)}1', merge_type='MERGE_ALL')
         wks.merge_cells(start=f'{excel_col(start_col)}2', end=f'{excel_col(start_col + 4)}2', merge_type='MERGE_ALL')  
         wks.merge_cells(start=f'{excel_col(start_col + 4)}3', end=f'{excel_col(start_col + 4)}4', merge_type='MERGE_ALL')
-        
+
         # 移動到右邊五列
         start_col += 5
         

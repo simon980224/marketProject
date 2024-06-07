@@ -5,6 +5,9 @@
 *.xls
 *.xlsx
 
+# Google Cloud Service Account Credentials
+astute-harmony-425407-p9-826d675d86f9.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

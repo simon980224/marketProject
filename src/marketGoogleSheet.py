@@ -114,6 +114,12 @@ wks.clear()
 # 调整工作表大小
 wks.resize(rows=None, cols=len(market_data)*5)
 
+# 凍結前四列
+wks.frozen_rows=4
+
+# 設定初始位置
+start_col = 1
+
 # 創建格式化模板
 gray_background = pygsheets.Cell('A1')
 gray_background.color = (0.8, 0.8, 0.8)
@@ -145,9 +151,6 @@ normal_template.set_text_format('bold', True)
 normal_template.set_text_format('fontFamily', 'Arial')
 normal_template.horizontal_alignment = pygsheets.HorizontalAlignment.CENTER
 normal_template.vertical_alignment = pygsheets.VerticalAlignment.MIDDLE
-
-# 設定初始位置
-start_col = 1
 
 # 寫入數據並格式化
 for account, details in market_data.items():
@@ -217,7 +220,6 @@ for account, details in market_data.items():
         # 移動到右邊五列
         start_col += 5
         
-# 凍結前四列
-wks.frozen_rows=4
+
 
 print("數據寫入完成！")

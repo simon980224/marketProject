@@ -1,5 +1,6 @@
 import requests
 import json
+from datetime import datetime
 
 url = "https://seller.shopee.tw/api/v3/finance/get_wallet_transactions_v2"
 params = {
@@ -49,9 +50,22 @@ data = {
 response = requests.post(url, params=params, headers=headers, data=json.dumps(data))
 response_data = response.json()
 
+# 狀態轉換函數
+def translate_status(status):
+    status_dict = {
+        2: "進行中",
+        3: "已完成"
+    }
+    return status_dict.get(status, "未知狀態")
+
 # 過濾只顯示"自動提款"的交易記錄
 auto_withdraw_transactions = [
-    txn for txn in response_data['data']['transactions'] if txn['transaction_type'] == 4000
+    {
+        "時間": datetime.utcfromtimestamp(txn['created_at']).strftime('%Y-%m-%d %H:%M:%S'),
+        "金額": txn['amount'],
+        "狀態": translate_status(txn['status'])
+    }
+    for txn in response_data['data']['transactions'] if txn['transaction_type'] == 4000
 ]
 
 # 打印過濾後的結果

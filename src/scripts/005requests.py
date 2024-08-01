@@ -51,7 +51,19 @@ def fetch_transactions():
         "transaction_types": []
     }
 
-    response = requests.post(url, params=params, headers=headers, data=json.dumps(data))
+    try:
+        response = requests.post(url, params=params, headers=headers, data=json.dumps(data))
+        response.raise_for_status()  # 如果狀態碼不是200，這行會拋出HTTPError
+    except requests.exceptions.HTTPError as http_err:
+        if response.status_code == 403:
+            print("403 Forbidden - 請重新取得憑證。")
+        else:
+            print(f"HTTP error occurred: {http_err}")
+        return []
+    except Exception as err:
+        print(f"Other error occurred: {err}")
+        return []
+
     response_data = response.json()
 
     # 狀態轉換函數

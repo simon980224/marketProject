@@ -15,7 +15,7 @@ def load_user_info(user_info_path):
 
 if __name__ == "__main__":
     scripts = ['005requests.py', '027requests.py']
-    script_dir = '/Users/chenyaoxuan/Desktop/myproject/marketProject/src/'
+    script_dir = '/Users/chenyaoxuan/Desktop/myproject/marketProject/src/scripts'
     user_info_path = '/Users/chenyaoxuan/Desktop/myproject/marketProject/userInfo.json'
     
     # 讀取用戶資訊

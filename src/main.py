@@ -6,14 +6,16 @@ from datetime import datetime
 import pandas as pd
 
 def run_script(script_name):
+    """運行指定的Python腳本並返回其輸出"""
     result = subprocess.run([sys.executable, script_name], capture_output=True, text=True)
     return result.stdout
 
 def load_user_info(user_info_path):
+    """從指定的JSON文件加載用戶信息"""
     with open(user_info_path, 'r', encoding='utf-8') as file:
         return json.load(file)
 
-if __name__ == "__main__":
+def main():
     scripts = ['005requests.py', '027requests.py']
     script_dir = '/Users/chenyaoxuan/Desktop/myproject/marketProject/src/scripts'
     user_info_path = '/Users/chenyaoxuan/Desktop/myproject/marketProject/userInfo.json'
@@ -85,3 +87,6 @@ if __name__ == "__main__":
     df.to_excel(output_file_path, header=False, index=False)
 
     print(f"All transactions have been written to {output_file_path}")
+
+if __name__ == "__main__":
+    main()

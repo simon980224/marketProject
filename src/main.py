@@ -35,20 +35,23 @@ if __name__ == "__main__":
         
         transactions = json.loads(output)
         
-        if not transactions:  # 檢查是否有交易內容
-            today_date = datetime.now().strftime("%Y-%m-%d")
-            print(f'{today_date} {script} 無交易內容')
-        else:
-            print(f"\nTransactions from {script}:")
-            print(json.dumps(transactions, indent=4, ensure_ascii=False))
-        
+        today_date = datetime.now().strftime("%Y-%m-%d")
         owner = id_to_owner.get(script_id, "未知用戶")
+        
         if owner not in all_transactions:
             all_transactions[owner] = {"date": [], "transaction": []}
         
-        for transaction in transactions:
-            all_transactions[owner]["date"].append(datetime.now().strftime("%Y-%m-%d"))
-            all_transactions[owner]["transaction"].append(transaction)
+        if not transactions:  # 檢查是否有交易內容
+            print(f'{today_date} {script} 無交易內容')
+            all_transactions[owner]["date"].append(today_date)
+            all_transactions[owner]["transaction"].append({"金額": 0, "狀態": "無交易"})  # 添加一個表示無交易的條目
+        else:
+            print(f"\nTransactions from {script}:")
+            print(json.dumps(transactions, indent=4, ensure_ascii=False))
+            
+            for transaction in transactions:
+                all_transactions[owner]["date"].append(today_date)
+                all_transactions[owner]["transaction"].append(transaction)
 
     # 準備輸出到Excel的數據
     max_len = max(len(data["date"]) for data in all_transactions.values())
@@ -56,10 +59,15 @@ if __name__ == "__main__":
 
     for owner, data in all_transactions.items():
         combined_data = []
+        first_owner = True
         for date, transaction in zip(data["date"], data["transaction"]):
-            combined_data.append(owner)
-            combined_data.append(transaction["時間"])
-            combined_data.append(transaction["金額"])
+            if first_owner:
+                combined_data.append(owner)
+                first_owner = False
+            else:
+                combined_data.append('')
+            combined_data.append(date)  # 這裡使用只有日期的date
+            combined_data.append(str(transaction["金額"]))
             combined_data.append(transaction["狀態"])
         # 填充空白以使所有列具有相同的長度
         combined_data.extend([''] * (max_len * 4 - len(combined_data)))
@@ -68,8 +76,12 @@ if __name__ == "__main__":
     # 將數據轉換為DataFrame
     df = pd.DataFrame(output_data)
 
-    # 將DataFrame寫入Excel文件
-    output_file = '/Users/chenyaoxuan/Desktop/all_transactions.xlsx'
-    df.to_excel(output_file, header=False, index=False)
+    # 根據當前日期生成輸出檔案名
+    today_date_str = datetime.now().strftime("%Y-%m-%d")
+    output_file_name = f'{today_date_str}蝦皮自動提款記錄.xlsx'
+    output_file_path = os.path.join('/Users/chenyaoxuan/Desktop/', output_file_name)
 
-    print(f"All transactions have been written to {output_file}")
+    # 將DataFrame寫入Excel文件
+    df.to_excel(output_file_path, header=False, index=False)
+
+    print(f"All transactions have been written to {output_file_path}")

@@ -1,36 +1,75 @@
 import requests
+from bs4 import BeautifulSoup
+import json
 
-# 創建一個會話對象
+# 忽略SSL警告
+requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
+
+# 創建會話
 session = requests.Session()
 
-# 設置Cookie
-cookies = {
-    "SPC_T_ID": "uOETBMe6PRrDy+X/SD34tEDw14zrWVjwQGvaPeu7P2sGGHyNEvR+uxiiOveSxmkCOWldq9h6DPAK+OmdNq+hESOc7xTqYGiimpvfuiyggFAN9tniMItxnZB4OiAdA8UfwmZVzem4M06Gnf6pndQx/cV4k9YVbb87P/+6DzGA40I=",
-    "SPC_F": "ZQgMuiYzKcj6bgypg95NHCZKhZVweS4F",
-    "SPC_SC_SESSION": "5a127150c64abcb62c99bf4edb0ca45d_1_187791978",
-    "SPC_R_T_ID": "uOETBMe6PRrDy+X/SD34tEDw14zrWVjwQGvaPeu7P2sGGHyNEvR+uxiiOveSxmkCOWldq9h6DPAK+OmdNq+hESOc7xTqYGiimpvfuiyggFAN9tniMItxnZB4OiAdA8UfwmZVzem4M06Gnf6pndQx/cV4k9YVbb87P/+6DzGA40I=",
-    "SPC_SC_UD": "187791978",
-    "SPC_SI": "IsCQZgAAAABIOGZVYVZKdtP7BAAAAAAAN2h3ZnBtNkU=",
-    "SPC_SC_TK": "f91f639467930f075a14a4d21e77c6b3",
-    "SPC_EC": ".Q1VXd0lKUTI4djg2cTZ4Zg8iS6VeyfYNHaAOEvc8kKpQnC2SlxQHFU6I06JXOIzo4xm70r/6yt+/eOVV4NtRqRgjQO+8UjxFz8QyU8nhj+Loj/1UXXe5xv7RJqwuOknVzhB92uBsCWPtnnsRQk3AdmmDB6SkM4YmPRl6dCIRXhOeaDFITuGMLdY0sstgY7xEfxqXiVAmCcBjX3M0hA/KMw==",
-    "__stripe_mid": "f5771447-f04c-4e6d-8522-193593f8a6a772ee0c",
-    "CTOKEN": "NFAWwkirEe%2BPxML8AO35mA%3D%3D",
-    "REC_T_ID": "e470ee55-27ac-11ee-a033-089204a3b46f",
-    "SC_DFP": "EDDPxkwquMnbBKgrxTTRuYhrDvCsDLAI",
-    "SPC_R_T_IV": "YTR1bjVnWGk5UEhYYmRNSw==",
-    "SPC_SEC_SI": "v1-TGE4Q2U0ZUtpYnJlR2JxccpwPfn40FQVB1T2t8RdXNB02VOLFXHhFZuJwCwCqC2X3Ym7mGUBK1FKuPrQCUUKxnJrHkYLvUpXLryrqXqaXvo=",
-    "SPC_ST": ".Q1VXd0lKUTI4djg2cTZ4Zg8iS6VeyfYNHaAOEvc8kKpQnC2SlxQHFU6I06JXOIzo4xm70r/6yt+/eOVV4NtRqRgjQO+8UjxFz8QyU8nhj+Loj/1UXXe5xv7RJqwuOknVzhB92uBsCWPtnnsRQk3AdmmDB6SkM4YmPRl6dCIRXhOeaDFITuGMLdY0sstgY7xEfxqXiVAmCcBjX3M0hA/KMw==",
-    "SPC_STK": "5hOThSGoBSkURM4WFrndXr0MgdxdsHGoXotNbyfEWBoEwsNtwr16VIFHA0tcm/IKZm3VHerk8Dd2All37fRiynBTSAN8ZLbXyTUGkr17REnz8DC8HC49MmPS9Hh3PwOgPxIhQFnKWfjUXvMprSwZoY69FR+OAmZd7PNEB3BZGAbU/FurWTvgxpseYJIXvnE+m1EF9tw3PYjuajMr+uTBogOnbLG07epJDKjoUsnyCQg=",
-    "SPC_T_IV": "YTR1bjVnWGk5UEhYYmRNSw==",
-    "SPC_U": "187791978"
+# 訪問登錄頁面以獲取CSRF令牌
+login_page_url = "https://localhost:7229/account/login"
+login_page_response = session.get(login_page_url, verify=False)
+
+# 解析HTML以獲取__RequestVerificationToken
+soup = BeautifulSoup(login_page_response.text, 'html.parser')
+csrf_token = soup.find('input', {'name': '__RequestVerificationToken'})['value']
+
+# 登錄URL
+login_url = "https://localhost:7229/account/login"
+
+# 請求頭
+headers = {
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Cache-Control": "no-cache",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Origin": "https://localhost:7229",
+    "Pragma": "no-cache",
+    "Referer": "https://localhost:7229/account/login",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "same-origin",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15"
 }
 
-# 將Cookie添加到會話中
-session.cookies.update(cookies)
+# 登錄數據
+data = {
+    "UserName": "edenred",
+    "Password": "edenred",
+    "__RequestVerificationToken": csrf_token
+}
 
-# 發送GET請求
-response = session.get("https://shopee.tw")
+# 發送POST請求進行登錄
+login_response = session.post(login_url, headers=headers, data=data, verify=False)
 
-# 打印響應狀態碼和內容
-print(response.status_code)
-print(response.text)
+# 打印登錄響應狀態碼和內容
+print("Login Status Code:", login_response.status_code)
+print("Login Response Text:", login_response.text)
+
+# 假設令牌在響應體中以JSON格式返回
+jwt_token = None
+try:
+    response_json = login_response.json()
+    jwt_token = response_json.get('token')
+    print("JWT Token:", jwt_token)
+except json.JSONDecodeError:
+    print("No JSON response")
+
+if jwt_token:
+    # 使用獲取的JWT令牌訪問受保護的API端點
+    protected_url = "https://localhost:7229/api/protected"  # 替換為你的受保護API端點
+
+    # 設置Authorization標頭
+    protected_headers = {
+        "Authorization": f"Bearer {jwt_token}"
+    }
+
+    # 發送GET請求到受保護的API端點
+    protected_response = session.get(protected_url, headers=protected_headers, verify=False)
+
+    # 打印受保護API響應狀態碼和內容
+    print("Protected API Status Code:", protected_response.status_code)
+    print("Protected API Response Text:", protected_response.text)
+else:
+    print("JWT Token not found in the response")

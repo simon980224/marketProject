@@ -1,8 +1,8 @@
+from datetime import datetime
 import subprocess
 import sys
 import os
 import json
-from datetime import datetime
 import pandas as pd
 
 def run_script(script_name):
@@ -37,42 +37,36 @@ def main():
         
         transactions = json.loads(output)
         
-        today_date = datetime.now().strftime("%Y-%m-%d")
         owner = id_to_owner.get(script_id, "未知用戶")
         
         if owner not in all_transactions:
             all_transactions[owner] = {"date": [], "transaction": []}
         
         if not transactions:  # 檢查是否有交易內容
-            print(f'{today_date} {script} 無交易內容')
-            all_transactions[owner]["date"].append(today_date)
-            all_transactions[owner]["transaction"].append({"金額": 0, "狀態": "無交易內容"})  # 添加一個表示無交易內容的條目
+            print(f'{script} 無交易內容')
+            all_transactions[owner]["transaction"].append({"金額": 0, "狀態": "無交易內容", "帳戶": "", "時間": ""})  # 添加一個表示無交易內容的條目
         else:
             print(f"\nTransactions from {script}:")
             print(json.dumps(transactions, indent=4, ensure_ascii=False))
             
             for transaction in transactions:
-                all_transactions[owner]["date"].append(today_date)
                 all_transactions[owner]["transaction"].append(transaction)
 
     # 準備輸出到Excel的數據
-    max_len = max(len(data["date"]) for data in all_transactions.values())
+    max_len = max(len(data["transaction"]) for data in all_transactions.values())
     output_data = {owner: [] for owner in all_transactions}
 
     for owner, data in all_transactions.items():
         combined_data = []
-        first_owner = True
-        for date, transaction in zip(data["date"], data["transaction"]):
-            if first_owner:
-                combined_data.append(owner)
-                first_owner = False
-            else:
-                combined_data.append('')
-            combined_data.append(date)  # 這裡使用只有日期的date
+        for transaction in data["transaction"]:
+            combined_data.append(owner)
+            combined_data.append(transaction["時間"][:10])  # 使用交易中的時間字段的前10個字符
+            combined_data.append(transaction["帳戶"])
             combined_data.append(str(transaction["金額"]))
             combined_data.append(transaction["狀態"])
         # 填充空白以使所有列具有相同的長度
-        combined_data.extend([''] * (max_len * 4 - len(combined_data)))
+        while len(combined_data) < max_len * 5:
+            combined_data.extend([''] * 5)
         output_data[owner] = combined_data
 
     # 將數據轉換為DataFrame

@@ -2,13 +2,13 @@ import requests
 import json
 from datetime import datetime
 
-def fetch_transactions():
-    url = "https://seller.shopee.tw/api/v3/finance/get_wallet_transactions_v2"
+def fetch_transactions_and_bank_info():
+    url_wallet = "https://seller.shopee.tw/api/v3/finance/get_wallet_transactions_v2"
+    url_bank = "https://seller.shopee.tw/api/v4/seller/local_wallet/get_withdrawal_options"
     params = {
         "SPC_CDS": "ae5c11c6-24e2-4130-9299-742f1576e7e5",
         "SPC_CDS_VER": "2"
     }
-
     headers = {
         "content-type": "application/json;charset=UTF-8",
         "cookie": (
@@ -46,7 +46,7 @@ def fetch_transactions():
     start_timestamp = int(start_time.timestamp())
     end_timestamp = int(end_time.timestamp())
 
-    data = {
+    data_wallet = {
         "wallet_type": 0,
         "pagination": {"limit": 20},
         "start_time": start_timestamp,
@@ -55,10 +55,15 @@ def fetch_transactions():
     }
 
     try:
-        response = requests.post(url, params=params, headers=headers, data=json.dumps(data))
-        response.raise_for_status()  # 如果狀態碼不是200，這行會拋出HTTPError
+        # 首先請求錢包交易記錄
+        response_wallet = requests.post(url_wallet, params=params, headers=headers, data=json.dumps(data_wallet))
+        response_wallet.raise_for_status()  # 如果狀態碼不是200，這行會拋出HTTPError
+
+        # 然後請求銀行信息
+        response_bank = requests.get(url_bank, headers=headers, params=params)
+        response_bank.raise_for_status()  # 如果狀態碼不是200，這行會拋出HTTPError
     except requests.exceptions.HTTPError as http_err:
-        if response.status_code == 403:
+        if response_wallet.status_code == 403 or response_bank.status_code == 403:
             print("403 Forbidden - 請重新取得憑證。")
         else:
             print(f"HTTP error occurred: {http_err}")
@@ -67,8 +72,8 @@ def fetch_transactions():
         print(f"Other error occurred: {err}")
         return []
 
-    response_data = response.json()
-    print(response_data)
+    # 處理錢包交易記錄的響應
+    response_data_wallet = response_wallet.json()
 
     # 狀態轉換函數
     def translate_status(status):
@@ -78,19 +83,32 @@ def fetch_transactions():
         }
         return status_dict.get(status, "未知狀態")
 
-    # 過濾只顯示"自動提款"的交易記錄
+    # 處理銀行信息的響應
+    response_data_bank = response_bank.json()
+
+    # 提取銀行名和銀行帳號末四碼
+    bank_accounts = response_data_bank['data']['bank_accounts']
+    bank_info = {
+        account['bank_account_id']: {
+            "銀行名": account['bank_name'],
+            "銀行帳號末四碼": account['account_number'][-4:]
+        }
+        for account in bank_accounts
+    }
+
+    # 過濾只顯示"自動提款"的交易記錄，並關聯銀行信息
     auto_withdraw_transactions = [
         {
             "時間": datetime.utcfromtimestamp(txn['created_at']).strftime('%Y-%m-%d %H:%M:%S'),
             "金額": str(txn['amount']),
             "狀態": translate_status(txn['status']),
-            "帳戶": txn['bank_details']['bank_account_id'] if 'bank_details' in txn and 'bank_account_id' in txn['bank_details'] else "未知"
+            "帳戶": bank_info[txn['bank_details']['bank_account_id']]['銀行名'] + bank_info[txn['bank_details']['bank_account_id']]['銀行帳號末四碼'] if 'bank_details' in txn and 'bank_account_id' in txn['bank_details'] and txn['bank_details']['bank_account_id'] in bank_info else "未知"
         }
-        for txn in response_data['data']['transactions'] if txn['transaction_type'] == 4000
+        for txn in response_data_wallet['data']['transactions'] if txn['transaction_type'] == 4000
     ]
 
     return auto_withdraw_transactions
 
 if __name__ == "__main__":
-    transactions = fetch_transactions()
+    transactions = fetch_transactions_and_bank_info()
     print(json.dumps(transactions, indent=4, ensure_ascii=False))

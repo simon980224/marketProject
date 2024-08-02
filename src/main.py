@@ -121,7 +121,7 @@ def main():
         df = pd.concat([df, total_row], ignore_index=True)
 
         # 為每個擁有者生成單獨的Excel文件名
-        output_file_name = f'{today_date_str}_{owner}_蝦皮自動提款記錄.xlsx'
+        output_file_name = f'{today_date_str}_{owner}_蝦皮提款記錄.xlsx'
         output_file_path = os.path.join('/Users/chenyaoxuan/Desktop/', output_file_name)
 
         # 將DataFrame寫入Excel文件

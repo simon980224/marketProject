@@ -1,9 +1,10 @@
 import requests
 import json
 from datetime import datetime
+import pytz
 
 def fetch_transactions_and_bank_info():
-    url_wallet = "https://seller.shopee.tw/api/v3/finance/get_wallet_transactions_v2"
+    url_wallet = "https://seller.shopee.tw/api/v3/finance/get_wallet_transactions_v2?SPC_CDS=25f9045f-8c37-4326-b535-acbe00978586&SPC_CDS_VER=2"
     url_bank = "https://seller.shopee.tw/api/v4/seller/local_wallet/get_withdrawal_options"
     params = {
         "SPC_CDS": "ae5c11c6-24e2-4130-9299-742f1576e7e5",
@@ -40,7 +41,7 @@ def fetch_transactions_and_bank_info():
     }
 
     # 固定7月1日00:00:00.000到7月31日23:59:59.999的時間範圍
-    start_time = datetime(2024, 7, 1, 0, 0, 0, 0)
+    start_time = datetime(2024, 5, 1, 0, 0, 0, 0)
     end_time = datetime(2024, 7, 31, 23, 59, 59, 999000)
 
     start_timestamp = int(start_time.timestamp())
@@ -51,7 +52,7 @@ def fetch_transactions_and_bank_info():
         "pagination": {"limit": 20},
         "start_time": start_timestamp,
         "end_time": end_timestamp,
-        "transaction_types": []
+        "transaction_types": [4000, 4001, 201, 203]
     }
 
     try:
@@ -96,15 +97,20 @@ def fetch_transactions_and_bank_info():
         for account in bank_accounts
     }
 
+    # 定義UTC和GMT+8時區
+    utc = pytz.utc
+    gmt_plus_8 = pytz.timezone('Asia/Taipei')
+
     # 過濾只顯示"自動提款"的交易記錄，並關聯銀行信息
     auto_withdraw_transactions = [
         {
-            "時間": datetime.utcfromtimestamp(txn['created_at']).strftime('%Y-%m-%d %H:%M:%S'),
+            "時間": datetime.fromtimestamp(txn['created_at'], utc).astimezone(gmt_plus_8).strftime('%Y-%m-%d %H:%M:%S'),
+            "銀行卡": bank_info[txn['bank_details']['bank_account_id']]['銀行名'] + bank_info[txn['bank_details']['bank_account_id']]['銀行帳號末四碼'] if 'bank_details' in txn and 'bank_account_id' in txn['bank_details'] and txn['bank_details']['bank_account_id'] in bank_info else "未知",
+            "提款方式": "自動提款",
             "金額": txn['amount'],
             "狀態": translate_status(txn['status']),
-            "帳戶": bank_info[txn['bank_details']['bank_account_id']]['銀行名'] + bank_info[txn['bank_details']['bank_account_id']]['銀行帳號末四碼'] if 'bank_details' in txn and 'bank_account_id' in txn['bank_details'] and txn['bank_details']['bank_account_id'] in bank_info else "未知"
         }
-        for txn in response_data_wallet['data']['transactions'] if txn['transaction_type'] == 4000
+        for txn in response_data_wallet['data']['transactions']
     ]
 
     # 計算總金額

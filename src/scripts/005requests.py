@@ -1,6 +1,6 @@
 import requests
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 
 def fetch_transactions():
     url = "https://seller.shopee.tw/api/v3/finance/get_wallet_transactions_v2"
@@ -10,10 +10,6 @@ def fetch_transactions():
     }
 
     headers = {
-        "authority": "seller.shopee.tw",
-        "accept": "application/json, text/plain, */*",
-        "accept-encoding": "gzip, deflate, br, zstd",
-        "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
         "content-type": "application/json;charset=UTF-8",
         "cookie": (
             "SPC_CDS=ae5c11c6-24e2-4130-9299-742f1576e7e5; "
@@ -40,30 +36,21 @@ def fetch_transactions():
             "SPC_STK=0UNFsOD6Y+NBPlPFJRLYGID1PY9D25aOhtWQPccYNcRK1sLl+dxemQQBVdmoAsSv6X3sA6UKf5EAlbpS4u8i2i2x65iwvQOeum4OVbEmLWwftigQhRe1jG1EUG4ExjjdmynvHnPmh8kj0NtGMBiD+R0RT4dzSebIv+iFIsu6rpqDFYMVx+F86ijGpU8mLhsK1VWmbBB19M3gbpkh0qalA9qxmKqlGbxvoATey2YC/zA=; "
             "SPC_SEC_SI=v1-NVRJUUJLTU44MVJrdk1JU0tba6GHMQ3jyAW5WqQ0n4/mUglbEwmzvMv/OWZaf2+FvUa0h+R7Bm4ZSurOexRBEibOSrge6ni2wT08IDyTCtI="
         ),
-        "origin": "https://seller.shopee.tw",
-        "priority": "u=1, i",
-        "referer": "https://seller.shopee.tw/portal/finance/wallet/shopeepay?is_from_login=true",
-        "sc-fe-session": "F9BC1E19C3CC36BD",
-        "sc-fe-ver": "21.58362",
-        "sec-ch-ua": "\"Not)A;Brand\";v=\"99\", \"Google Chrome\";v=\"127\", \"Chromium\";v=\"127\"",
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": "\"macOS\"",
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
         "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
     }
 
-    # 計算今天的開始和結束時間
-    today = datetime.utcnow().date()
-    start_time = int(datetime(today.year, today.month, today.day).timestamp())
-    end_time = int((datetime(today.year, today.month, today.day) + timedelta(days=1) - timedelta(seconds=1)).timestamp())
+    # 固定7月1日00:00:00.000到7月31日23:59:59.999的時間範圍
+    start_time = datetime(2024, 7, 1, 0, 0, 0, 0)
+    end_time = datetime(2024, 7, 31, 23, 59, 59, 999000)
+
+    start_timestamp = int(start_time.timestamp())
+    end_timestamp = int(end_time.timestamp())
 
     data = {
         "wallet_type": 0,
         "pagination": {"limit": 20},
-        "start_time": start_time,
-        "end_time": end_time,
+        "start_time": start_timestamp,
+        "end_time": end_timestamp,
         "transaction_types": []
     }
 
@@ -81,6 +68,7 @@ def fetch_transactions():
         return []
 
     response_data = response.json()
+    print(response_data)
 
     # 狀態轉換函數
     def translate_status(status):
@@ -94,8 +82,9 @@ def fetch_transactions():
     auto_withdraw_transactions = [
         {
             "時間": datetime.utcfromtimestamp(txn['created_at']).strftime('%Y-%m-%d %H:%M:%S'),
-            "金額": txn['amount'],
-            "狀態": translate_status(txn['status'])
+            "金額": str(txn['amount']),
+            "狀態": translate_status(txn['status']),
+            "帳戶": txn['bank_details']['bank_account_id'] if 'bank_details' in txn and 'bank_account_id' in txn['bank_details'] else "未知"
         }
         for txn in response_data['data']['transactions'] if txn['transaction_type'] == 4000
     ]

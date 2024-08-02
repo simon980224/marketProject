@@ -46,7 +46,7 @@ def main():
         if not transactions:  # 檢查是否有交易內容
             print(f'{today_date} {script} 無交易內容')
             all_transactions[owner]["date"].append(today_date)
-            all_transactions[owner]["transaction"].append({"金額": 0, "狀態": "無交易"})  # 添加一個表示無交易的條目
+            all_transactions[owner]["transaction"].append({"金額": 0, "狀態": "無交易內容"})  # 添加一個表示無交易內容的條目
         else:
             print(f"\nTransactions from {script}:")
             print(json.dumps(transactions, indent=4, ensure_ascii=False))

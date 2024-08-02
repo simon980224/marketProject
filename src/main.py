@@ -26,7 +26,7 @@ def load_user_info(user_info_path):
         return None
 
 def set_font_and_adjust_dimensions(file_path, size=20):
-    """設置Excel文件中的字體大小並自動調整列寬和行高"""
+    """設置Excel文件中的字體大小，將「銀行卡」欄位寬度設置為50，其他欄位設置為25，行高設置為50"""
     workbook = load_workbook(file_path)
     sheet = workbook.active
     
@@ -34,28 +34,16 @@ def set_font_and_adjust_dimensions(file_path, size=20):
         for cell in row:
             cell.font = Font(size=size)
     
-    # 自動調整列寬
+    # 將「銀行卡」欄位的列寬設置為50
     for col in sheet.columns:
-        max_length = 0
-        column = col[0].column_letter  # Get the column name
-        for cell in col:
-            if cell.value:
-                cell_length = len(str(cell.value))
-                if cell_length > max_length:
-                    max_length = cell_length
-        adjusted_width = (max_length + 2) * 1.2
-        sheet.column_dimensions[column].width = adjusted_width
+        if col[0].value == "銀行卡":
+            sheet.column_dimensions[col[0].column_letter].width = 50
+        else:
+            sheet.column_dimensions[col[0].column_letter].width = 25
     
-    # 自動調整行高
+    # 將所有行的高度設置為50
     for row in sheet.iter_rows():
-        max_height = 0
-        for cell in row:
-            if cell.value:
-                cell_lines = str(cell.value).split('\n')
-                cell_height = len(cell_lines) * 20  # 每行字體高度約為20
-                if cell_height > max_height:
-                    max_height = cell_height
-        sheet.row_dimensions[row[0].row].height = max_height
+        sheet.row_dimensions[row[0].row].height = 50
     
     workbook.save(file_path)
 
@@ -120,15 +108,16 @@ def main():
                 owner,
                 transaction["時間"][:10] if "時間" in transaction else "",
                 transaction["銀行卡"] if "銀行卡" in transaction else "",
+                transaction["提款方式"] if "提款方式" in transaction else "",
                 transaction["金額"] if "金額" in transaction else "",
                 transaction["狀態"] if "狀態" in transaction else ""
             ])
         
         # 將數據轉換為DataFrame
-        df = pd.DataFrame(output_rows, columns=["法人", "時間", "銀行卡", "金額", "狀態"])
+        df = pd.DataFrame(output_rows, columns=["編號姓名", "時間", "銀行卡", "提款方式", "金額", "狀態"])
 
         # 在DataFrame的最後一行添加總金額
-        total_row = pd.DataFrame([["", "", "總金額", data["total_amount"], ""]], columns=["法人", "時間", "銀行卡", "金額", "狀態"])
+        total_row = pd.DataFrame([["", "", "", "總金額", data["total_amount"], ""]], columns=["編號姓名", "時間", "銀行卡", "提款方式", "金額", "狀態"])
         df = pd.concat([df, total_row], ignore_index=True)
 
         # 為每個擁有者生成單獨的Excel文件名
@@ -138,7 +127,7 @@ def main():
         # 將DataFrame寫入Excel文件
         df.to_excel(output_file_path, index=False)
 
-        # 設置Excel文件中的字體大小並自動調整列寬和行高
+        # 設置Excel文件中的字體大小，將「銀行卡」欄位寬度設置為50，其他欄位設置為25，行高設置為50
         set_font_and_adjust_dimensions(output_file_path, size=20)
 
         print(f"Transactions for {owner} have been written to {output_file_path}")

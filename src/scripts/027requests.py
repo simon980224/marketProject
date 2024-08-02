@@ -118,7 +118,10 @@ def fetch_transactions_and_bank_info():
         for txn in response_data_wallet['data']['transactions'] if txn['transaction_type'] == 4000
     ]
 
-    return auto_withdraw_transactions
+    # 按時間排序
+    auto_withdraw_transactions_sorted = sorted(auto_withdraw_transactions, key=lambda x: datetime.strptime(x["時間"], '%Y-%m-%d %H:%M:%S'))
+
+    return auto_withdraw_transactions_sorted
 
 if __name__ == "__main__":
     transactions = fetch_transactions_and_bank_info()

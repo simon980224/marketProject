@@ -7,13 +7,21 @@ import pandas as pd
 
 def run_script(script_name):
     """運行指定的Python腳本並返回其輸出"""
-    result = subprocess.run([sys.executable, script_name], capture_output=True, text=True)
-    return result.stdout
+    try:
+        result = subprocess.run([sys.executable, script_name], capture_output=True, text=True, check=True)
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        print(f"運行腳本 {script_name} 時出現錯誤: {e}")
+        return None
 
 def load_user_info(user_info_path):
     """從指定的JSON文件加載用戶信息"""
-    with open(user_info_path, 'r', encoding='utf-8') as file:
-        return json.load(file)
+    try:
+        with open(user_info_path, 'r', encoding='utf-8') as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"加載用戶信息文件 {user_info_path} 時出現錯誤: {e}")
+        return None
 
 def main():
     scripts = ['005requests.py', '027requests.py']
@@ -22,6 +30,9 @@ def main():
     
     # 讀取用戶資訊
     user_info = load_user_info(user_info_path)
+    if not user_info:
+        print("無法加載用戶信息，程序終止。")
+        return
     
     # 建立從ID到owner的映射
     id_to_owner = {user['id']: user['owner'] for user in user_info}
@@ -33,18 +44,25 @@ def main():
         script_id = script[:3]  # 假設腳本名的前三個字符是ID
         script_path = os.path.join(script_dir, script)
         print(f"Running {script_path}...")
+
         output = run_script(script_path)
+        if output is None:
+            continue
         
-        transactions = json.loads(output)
+        try:
+            transactions = json.loads(output)
+        except json.JSONDecodeError as e:
+            print(f"解析腳本 {script} 的輸出時出現錯誤: {e}")
+            continue
         
         owner = id_to_owner.get(script_id, "未知用戶")
         
         if owner not in all_transactions:
-            all_transactions[owner] = {"date": [], "transaction": []}
+            all_transactions[owner] = {"transaction": []}
         
         if not transactions:  # 檢查是否有交易內容
             print(f'{script} 無交易內容')
-            all_transactions[owner]["transaction"].append({"金額": 0, "狀態": "無交易內容", "帳戶": "", "時間": ""})  # 添加一個表示無交易內容的條目
+            all_transactions[owner]["transaction"].append({"金額": 0, "狀態": "無交易內容", "帳戶": "", "時間": ""})
         else:
             print(f"\nTransactions from {script}:")
             print(json.dumps(transactions, indent=4, ensure_ascii=False))
@@ -52,35 +70,32 @@ def main():
             for transaction in transactions:
                 all_transactions[owner]["transaction"].append(transaction)
 
-    # 準備輸出到Excel的數據
-    max_len = max(len(data["transaction"]) for data in all_transactions.values())
-    output_data = {owner: [] for owner in all_transactions}
-
-    for owner, data in all_transactions.items():
-        combined_data = []
-        for transaction in data["transaction"]:
-            combined_data.append(owner)
-            combined_data.append(transaction["時間"][:10])  # 使用交易中的時間字段的前10個字符
-            combined_data.append(transaction["帳戶"])
-            combined_data.append(str(transaction["金額"]))
-            combined_data.append(transaction["狀態"])
-        # 填充空白以使所有列具有相同的長度
-        while len(combined_data) < max_len * 5:
-            combined_data.extend([''] * 5)
-        output_data[owner] = combined_data
-
-    # 將數據轉換為DataFrame
-    df = pd.DataFrame(output_data)
-
     # 根據當前日期生成輸出檔案名
     today_date_str = datetime.now().strftime("%Y-%m-%d")
-    output_file_name = f'{today_date_str}蝦皮自動提款記錄.xlsx'
-    output_file_path = os.path.join('/Users/chenyaoxuan/Desktop/', output_file_name)
 
-    # 將DataFrame寫入Excel文件
-    df.to_excel(output_file_path, header=False, index=False)
+    for owner, data in all_transactions.items():
+        output_rows = []
 
-    print(f"All transactions have been written to {output_file_path}")
+        for transaction in data["transaction"]:
+            output_rows.append([
+                owner,
+                transaction["時間"][:10] if "時間" in transaction else "",
+                transaction["帳戶"] if "帳戶" in transaction else "",
+                transaction["金額"] if "金額" in transaction else "",
+                transaction["狀態"] if "狀態" in transaction else ""
+            ])
+        
+        # 將數據轉換為DataFrame
+        df = pd.DataFrame(output_rows, columns=["法人", "時間", "帳戶", "金額", "狀態"])
+
+        # 為每個擁有者生成單獨的Excel文件名
+        output_file_name = f'{today_date_str}_{owner}_蝦皮自動提款記錄.xlsx'
+        output_file_path = os.path.join('/Users/chenyaoxuan/Desktop/', output_file_name)
+
+        # 將DataFrame寫入Excel文件
+        df.to_excel(output_file_path, index=False)
+
+        print(f"Transactions for {owner} have been written to {output_file_path}")
 
 if __name__ == "__main__":
     main()

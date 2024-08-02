@@ -111,7 +111,7 @@ def fetch_transactions_and_bank_info():
     auto_withdraw_transactions = [
         {
             "時間": datetime.utcfromtimestamp(txn['created_at']).strftime('%Y-%m-%d %H:%M:%S'),
-            "金額": txn['amount'],
+            "金額": str(txn['amount']),
             "狀態": translate_status(txn['status']),
             "帳戶": bank_info[txn['bank_details']['bank_account_id']]['銀行名'] + bank_info[txn['bank_details']['bank_account_id']]['銀行帳號末四碼'] if 'bank_details' in txn and 'bank_account_id' in txn['bank_details'] and txn['bank_details']['bank_account_id'] in bank_info else "未知"
         }

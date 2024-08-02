@@ -111,17 +111,26 @@ def fetch_transactions_and_bank_info():
     auto_withdraw_transactions = [
         {
             "時間": datetime.utcfromtimestamp(txn['created_at']).strftime('%Y-%m-%d %H:%M:%S'),
-            "金額": str(txn['amount']),
+            "金額": txn['amount'],
             "狀態": translate_status(txn['status']),
             "帳戶": bank_info[txn['bank_details']['bank_account_id']]['銀行名'] + bank_info[txn['bank_details']['bank_account_id']]['銀行帳號末四碼'] if 'bank_details' in txn and 'bank_account_id' in txn['bank_details'] and txn['bank_details']['bank_account_id'] in bank_info else "未知"
         }
         for txn in response_data_wallet['data']['transactions'] if txn['transaction_type'] == 4000
     ]
 
-    # 按時間排序
-    auto_withdraw_transactions_sorted = sorted(auto_withdraw_transactions, key=lambda x: datetime.strptime(x["時間"], '%Y-%m-%d %H:%M:%S'))
+    # 計算總金額
+    total_amount = sum(txn["金額"] for txn in auto_withdraw_transactions)
+    
+    # 將總金額添加到結果最上層
+    result = {
+        "總金額": total_amount,
+        "交易記錄": auto_withdraw_transactions
+    }
 
-    return auto_withdraw_transactions_sorted
+    # 按時間排序
+    result["交易記錄"] = sorted(result["交易記錄"], key=lambda x: datetime.strptime(x["時間"], '%Y-%m-%d %H:%M:%S'))
+
+    return result
 
 if __name__ == "__main__":
     transactions = fetch_transactions_and_bank_info()

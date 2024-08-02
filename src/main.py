@@ -58,7 +58,7 @@ def main():
         owner = id_to_owner.get(script_id, "未知用戶")
         
         if owner not in all_transactions:
-            all_transactions[owner] = {"transaction": []}
+            all_transactions[owner] = {"transaction": [], "total_amount": 0}
         
         if not transactions:  # 檢查是否有交易內容
             print(f'{script} 無交易內容')
@@ -66,9 +66,16 @@ def main():
         else:
             print(f"\nTransactions from {script}:")
             print(json.dumps(transactions, indent=4, ensure_ascii=False))
-            
-            for transaction in transactions:
-                all_transactions[owner]["transaction"].append(transaction)
+
+            # 如果transactions是包含總金額和交易記錄的字典
+            if isinstance(transactions, dict) and "交易記錄" in transactions and "總金額" in transactions:
+                all_transactions[owner]["total_amount"] += transactions["總金額"]
+                for transaction in transactions["交易記錄"]:
+                    all_transactions[owner]["transaction"].append(transaction)
+            else:
+                for transaction in transactions:
+                    all_transactions[owner]["transaction"].append(transaction)
+                    all_transactions[owner]["total_amount"] += transaction.get("金額", 0)
 
     # 根據當前日期生成輸出檔案名
     today_date_str = datetime.now().strftime("%Y-%m-%d")
@@ -87,6 +94,10 @@ def main():
         
         # 將數據轉換為DataFrame
         df = pd.DataFrame(output_rows, columns=["法人", "時間", "帳戶", "金額", "狀態"])
+
+        # 在DataFrame的最後一行添加總金額
+        total_row = pd.DataFrame([["", "", "總金額", data["total_amount"], ""]], columns=["法人", "時間", "帳戶", "金額", "狀態"])
+        df = pd.concat([df, total_row], ignore_index=True)
 
         # 為每個擁有者生成單獨的Excel文件名
         output_file_name = f'{today_date_str}_{owner}_蝦皮自動提款記錄.xlsx'

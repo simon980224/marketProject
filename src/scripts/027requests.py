@@ -1,8 +1,9 @@
 import json
 from datetime import datetime
-
 import pytz
 import requests
+
+# 027requests.py
 
 # 常數
 URL_WALLET = "https://seller.shopee.tw/api/v3/finance/get_wallet_transactions_v2?SPC_CDS=25f9045f-8c37-4326-b535-acbe00978586&SPC_CDS_VER=2"
@@ -110,7 +111,7 @@ def process_transactions(transactions, bank_info):
     auto_withdraw_transactions = [
         {
             "時間": datetime.fromtimestamp(txn['created_at'], UTC).astimezone(GMT_PLUS_8).strftime('%Y-%m-%d %H:%M:%S'),
-            "銀行卡": bank_info.get(txn['bank_details']['bank_account_id'], {}).get('銀行名', '未知') + bank_info.get(txn['bank_details']['bank_account_id'], {}).get('銀行帳號末四碼', '未知') if 'bank_details' in txn and 'bank_account_id' in txn['bank_details'] else "未知",
+            "銀行卡": bank_info.get(txn['bank_details']['bank_account_id'], {}).get('銀行名', '未知銀行') + bank_info.get(txn['bank_details']['bank_account_id'], {}).get('銀行帳號末四碼', '0000') if 'bank_details' in txn and 'bank_account_id' in txn['bank_details'] else "未知",
             "提款方式": "自動提款",
             "金額": txn['amount'],
             "狀態": translate_status(txn['status']),

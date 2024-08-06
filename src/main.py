@@ -2,7 +2,7 @@ import json
 import os
 import subprocess
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pandas as pd
 from openpyxl import load_workbook
@@ -51,6 +51,7 @@ def set_font_and_adjust_dimensions(file_path, size=20):
 def main():
     script_dir = '/Users/chenyaoxuan/Desktop/myproject/MarketProject/src/scripts'
     user_info_path = '/Users/chenyaoxuan/Desktop/myproject/MarketProject/userInfo.json'
+    output_base_dir = '/Users/chenyaoxuan/Desktop/myproject/MarketProject/marketExcel'
     scripts = [f for f in os.listdir(script_dir) if f.endswith('requests.py')]
     
     # 讀取用戶資訊
@@ -98,8 +99,15 @@ def main():
                 all_transactions[owner]["transaction"].append(transaction)
                 all_transactions[owner]["total_amount"] += transaction.get("金額", 0)
 
-    # 根據當前日期生成輸出檔案名
-    today_date_str = datetime.now().strftime("%Y-%m-%d")
+    # 根據當前日期生成當月份的資料夾名，使用UTC+8時區
+    utc_now = datetime.utcnow()
+    utc_plus_8_now = utc_now + timedelta(hours=8)
+    current_month_str = utc_plus_8_now.strftime("%Y-%m")
+    output_month_dir = os.path.join(output_base_dir, current_month_str)
+
+    # 如果資料夾不存在，則創建它
+    if not os.path.exists(output_month_dir):
+        os.makedirs(output_month_dir)
 
     for owner, data in all_transactions.items():
         output_rows = []
@@ -122,8 +130,8 @@ def main():
         df = pd.concat([df, total_row], ignore_index=True)
 
         # 為每個擁有者生成單獨的Excel文件名
-        output_file_name = f'{today_date_str}_{owner}_蝦皮提款記錄.xlsx'
-        output_file_path = os.path.join('/Users/chenyaoxuan/Desktop/myproject/MarketProject/marketExcel/', output_file_name)
+        output_file_name = f'{owner}_{current_month_str}蝦皮提款記錄.xlsx'
+        output_file_path = os.path.join(output_month_dir, output_file_name)
 
         # 將DataFrame寫入Excel文件
         df.to_excel(output_file_path, index=False)

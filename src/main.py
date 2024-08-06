@@ -53,17 +53,19 @@ def adjust_excel_format(file_path, font_size=20):
 def update_google_sheets(data, sheet, id_to_owner):
     """將數據寫入Google Sheets"""
     for title, details in data.items():
+        # 查找對應的用戶ID
+        user_id = next((uid for uid, uname in id_to_owner.items() if uname[:7] == title), "未知ID")
+        
         try:
-            wks = sheet.worksheet('title', title)
+            wks = sheet.worksheet('title', f"{user_id}_{title}")
         except pygsheets.WorksheetNotFound:
-            wks = sheet.add_worksheet(title)
+            # 使用 f-string 格式化添加新的工作表
+            wks = sheet.add_worksheet(f"{user_id}_{title}")
         
         wks.clear()
         df = pd.DataFrame(details, columns=["編號姓名", "時間", "銀行卡", "提款方式", "金額", "狀態"])
         wks.set_dataframe(df, (1, 1))
         
-        # 查找對應的用戶ID
-        user_id = next((uid for uid, uname in id_to_owner.items() if uname[:7] == title), "未知ID")
         print(f"{user_id}_{title} 資料已成功更新")
 
 def main():

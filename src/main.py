@@ -50,7 +50,7 @@ def adjust_excel_format(file_path, font_size=20):
     
     workbook.save(file_path)
 
-def update_google_sheets(data, sheet):
+def update_google_sheets(data, sheet, id_to_owner):
     """將數據寫入Google Sheets"""
     for title, details in data.items():
         try:
@@ -61,7 +61,10 @@ def update_google_sheets(data, sheet):
         wks.clear()
         df = pd.DataFrame(details, columns=["編號姓名", "時間", "銀行卡", "提款方式", "金額", "狀態"])
         wks.set_dataframe(df, (1, 1))
-        print(f"{title}資料已成功更新")
+        
+        # 查找對應的用戶ID
+        user_id = next((uid for uid, uname in id_to_owner.items() if uname[:7] == title), "未知ID")
+        print(f"{user_id}_{title} 資料已成功更新")
 
 def main():
     script_directory = '/Users/chenyaoxuan/Desktop/myproject/MarketProject/src/scripts'
@@ -155,7 +158,7 @@ def main():
 
         market_data[owner[:7]] = output_rows
 
-    update_google_sheets(market_data, sheet)
+    update_google_sheets(market_data, sheet, id_to_owner)
     print("所有資料已成功備份到 Google Sheets！")
 
 if __name__ == "__main__":

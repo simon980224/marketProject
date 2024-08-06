@@ -1,50 +1,225 @@
-import requests
+import pandas as pd
+import pygsheets
+import glob
+import warnings
 
-url = "https://seller.shopee.tw/api/v4/seller/local_wallet/get_withdrawal_options"
-params = {
-    "SPC_CDS": "ae5c11c6-24e2-4130-9299-742f1576e7e5",
-    "SPC_CDS_VER": "2"
+def excel_col(col):
+    """將列數字轉換為Excel列標籤"""
+    col_str = ""
+    while col:
+        (col, mod) = divmod(col - 1, 26)  # 減1是因為Excel列是從1開始計算，而不是從0
+        col_str = chr(mod + 65) + col_str
+    return col_str
+
+warnings.filterwarnings("ignore", category=UserWarning, module='urllib3')
+
+# Google Sheets 授權
+key = "/Users/chenyaoxuan/Desktop/myproject/MarketProject/astute-harmony-425407-p9-826d675d86f9.json"
+gc = pygsheets.authorize(service_file=key)
+url = "https://docs.google.com/spreadsheets/d/1SGNEuh-FjiBxoxH73NcDELDGbSO71vhc7DbkGuKk4wo/edit#gid=1894821213"
+sheet = gc.open_by_url(url)
+wks = sheet.worksheet('title', '測試')
+
+# 讀取數據的文件夾路徑
+folder_path = '/Users/chenyaoxuan/Desktop/myproject/MarketProject/marketExcel/'
+market_files = glob.glob(folder_path + '*.xlsx') + glob.glob(folder_path + '*.xls')
+
+user_data = {
+    "d51gtsdkij": {"003": "鐘維嘉"},
+    "575r0skk49": {"004(黃士嘉)": "黃士嘉"},
+    "chi6na8": {"004(許嘉傑)": "許嘉傑"},
+    "fctjhc9fvo": {"006": "胡勝斐"},
+    "pingfan_0320": {"013": "廖子萍"},
+    "2ihsyc3mrq": {"015": "賴宗成"},
+    "qdtfdj4asx": {"022": "蕭喬文"},
+    "tookls01": {"027": "王緯德"},
+    "csherswa": {"034": "趙偉廷"},
+    "0l19pqrp8s": {"042": "劉漢成"},
+    "gyk9k3og52": {"043": "陳冠華"},
+    "ruili888": {"044": "蕭兆揚"},
+    "f0ylv571rl": {"045": "李崇恺"},
+    "scxt7aw8ic": {"053": "沈安培"},
+    "_2_r71g7fi": {"061": "李識智"},
+    "km52cd0j8a": {"063": "洪楷琳"},
+    "cr9qpc0org": {"064": "阮羿勲"},
+    "irerghmt0p": {"076": "沈政彥"},
+    "29bije5j5k": {"079": "張庭語"},
+    "li5wdw27p1": {"082": "吳祥瑋"},
+    "nnpythqs51": {"083": "潘楷元"},
+    "fo8l6z5o3p": {"085": "王俊凱"},
+    "qgo3uvja8e": {"104": "饒傑華"},
+    "6wpf6cem28": {"110": "李耕宇"},
+    "mvb3e87s63": {"117": "洪健欽"},
+    "kgxeetqg20": {"120": "蔡榮璜"},
+    "magical_store": {"121": "林顯明"},
+    "z7tfd2a_7f": {"129": "張文騰"},
+    "5v5mkughjk": {"156": "賴慧淑"},
+    "uurk46u_l8": {"158": "陳允妍"},
+    "kf_1ky5z1m": {"161": "陳冠霖"},
+    "j401zjn1zq": {"162": "蔡阜澄"},
+    "0lleyve_zl": {"163": "劉彥詢"},
+    "j3hp3kxofz": {"167": "邱瓊葦"},
+    "jxz4dpuvi6": {"169": "李政恩"},
+    "kf8g90s8vt": {"170": "黃鈺寶"},
+    "mufz9f1hkj": {"171": "黃喻鎂"},
+    "lfb21qr8x1": {"184": "邱淮蔓"},
+    "rhkwlcjotf": {"189": "盧錦名"},
+    "nz7e0khlio": {"193": "陳清白"},
+    "klo4ayncfj": {"197": "徐昀伶"},
+    "35f425rlqd": {"198": "張嘉玲"},
+    "mr_3i5jljz": {"205": "曾韋綸"},
+    "heimaostjk666": {"212": "董志忠"},
+    "bnczq9jjne": {"230": "陳建良"},
+    "mie5793": {"231": "曾崝豪"},
+    "vsnkyse708": {"235": "劉祥慶"},
+    "cmychal": {"237": "姜禹彤"},
+    "kp1usft_6x": {"240": "張文彰"},
+    "u_gepzjb3x": {"254": "柯英丞"},
+    "6udpyyp72u": {"256": "林紓戎"},
+    "4ildmehv0p": {"258": "林斯珮"}
 }
-headers = {
-    "cookie": (
-        "SPC_CDS=ae5c11c6-24e2-4130-9299-742f1576e7e5; "
-        "SPC_F=74f5H76QUQK6Ha5RDlM4cfRMsHW8inm1; "
-        "REC_T_ID=42926ffe-fdfe-11ee-8acc-c28dae5ad99c; "
-        "SC_DFP=xRQCqZQkfoWsYuFRZpchCEbJlBzRXNNc; "
-        "_gcl_au=1.1.2091290950.1722414505; "
-        "_gid=GA1.2.846147447.1722414505; "
-        "SPC_SI=r2WfZgAAAABvMHBCYUNkbs2/6QAAAAAAaGYxZnhERVM=; "
-        "SPC_U=-; "
-        "_fbp=fb.1.1722414505348.181564866909928500; "
-        "SPC_T_IV=WFFHODdIdjM1YWJaR1JNUw==; "
-        "SPC_R_T_ID=cK/hkS0SFdIRdErQJZ2Nx+KAvu94OPJVowuKDKVNbLGiw3Z6ja3Q/RCfT4ZSWel4Npq7xpsLNaI8a6WxuavPlMpoAERgEgjdK1K8iWosqX2q/peTZccNqi7QMNhHcfNvp3NmcYSG5Ns65YG/uK700RTS2uKKGAZeLvTJIbXkcdU=; "
-        "SPC_R_T_IV=WFFHODdIdjM1YWJaR1JNUw==; "
-        "SPC_T_ID=cK/hkS0SFdIRdErQJZ2Nx+KAvu94OPJVowuKDKVNbLGiw3Z6ja3Q/RCfT4ZSWel4Npq7xpsLNaI8a6WxuavPlMpoAERgEgjdK1K8iWosqX2q/peTZccNqi7QMNhHcfNvp3NmcYSG5Ns65YG/uK700RTS2uKKGAZeLvTJIbXkcdU=; "
-        "_ga=GA1.1.984738795.1722414505; "
-        "SPC_CLIENTID=NzRmNUg3NlFVUUs2zvrnzutqktcxwijg; "
-        "SPC_EC=.azNyaTVQSk5sT2VHSHlkNfKevrg1hykuxb9r5wNYhQZF4MPzzb2zg+XwGKmC39LdSNSzEo3QWOR5i5d5jCTdxnXvycrDpmFSn1Hy/pkVrVk4rTDDayTg3sJwR9lKIjmIRJJjCJy0f5HNIhcHxyCT5Pa7IxjkS4J9VGO/DnwZtLBVRlNnGUmZ7BBedtsxAcM2bcwZZO8RzJiMXRjXLgD0Yg==; "
-        "SPC_ST=.azNyaTVQSk5sT2VHSHlkNfKevrg1hykuxb9r5wNYhQZF4MPzzb2zg+XwGKmC39LdSNSzEo3QWOR5i5d5jCTdxnXvycrDpmFSn1Hy/pkVrVk4rTDDayTg3sJwR9lKIjmIRJJjCJy0f5HNIhcHxyCT5Pa7IxjkS4J9VGO/DnwZtLBVRlNnGUmZ7BBedtsxAcM2bcwZZO8RzJiMXRjXLgD0Yg==; "
-        "_ga_E1H7XE0312=GS1.1.1722414001.1.1.1722414519.45.0.0; "
-        "SPC_SC_TK=f6383a462fce62caf0470936d02f9ed1; "
-        "SPC_SC_UD=1237726476; "
-        "SPC_SC_SESSION=9d131ac4a4b522b07b21a6b0fef866e5_1_1237726476; "
-        "SPC_STK=0UNFsOD6Y+NBPlPFJRLYGID1PY9D25aOhtWQPccYNcRK1sLl+dxemQQBVdmoAsSv6X3sA6UKf5EAlbpS4u8i2i2x65iwvQOeum4OVbEmLWwftigQhRe1jG1EUG4ExjjdmynvHnPmh8kj0NtGMBiD+R0RT4dzSebIv+iFIsu6rpqDFYMVx+F86ijGpU8mLhsK1VWmbBB19M3gbpkh0qalA9qxmKqlGbxvoATey2YC/zA=; "
-        "SPC_SEC_SI=v1-NVRJUUJLTU44MVJrdk1JU0tba6GHMQ3jyAW5WqQ0n4/mUglbEwmzvMv/OWZaf2+FvUa0h+R7Bm4ZSurOexRBEibOSrge6ni2wT08IDyTCtI="
-    ),
-    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
-}
 
-response = requests.get(url, headers=headers, params=params)
+# 初始化數據字典
+market_data = {}
 
-if response.status_code == 200:
-    json_data = response.json()
-    
-    # 提取銀行名和銀行帳號末四碼
-    bank_accounts = json_data['data']['bank_accounts']
-    
-    for account in bank_accounts:
-        bank_name = account['bank_name']
-        account_number = account['account_number']
-        print(f"銀行名: {bank_name}, 銀行帳號末四碼: {account_number[-4:]}")
-else:
-    print(f"請求失敗，狀態碼: {response.status_code}")
+# 讀取每個 Excel 文件並處理數據
+for file in market_files:
+    df = pd.read_excel(file)
+    data_list = df.values.tolist()
+
+    market_acc = data_list[4][1]
+    market_details = data_list[17:]
+    result = []
+
+    # 處理每一筆市場細節
+    for detail in market_details:
+        if detail[1] == '已提款金額' and detail[4] == '支出' and detail[6] != '失敗':
+            date = detail[0][:10].replace('-', '/')  # 轉換日期格式
+            amount = abs(detail[5])  # 確保金額為正數
+            if amount > 1000:
+                amount = f"{amount:,.0f}"
+            else:
+                amount = str(amount)
+            result.append([date, amount])
+
+    # 將結果排序並存儲於字典
+    market_data[market_acc] = sorted(result, key=lambda x: x[0])
+
+# 將 market_data 按照 user_data 中的用戶編號排序
+market_data = {k: market_data[k] for k in sorted(market_data.keys(), key=lambda x: list(user_data[x].keys())[0])}
+
+# 清空工作表
+wks.clear()
+
+# 调整工作表大小
+wks.resize(rows=None, cols=len(market_data)*5)
+
+# 凍結前四列
+wks.frozen_rows=4
+
+# 設定初始位置
+start_col = 1
+
+# 創建格式化模板
+gray_background = pygsheets.Cell('A1')
+gray_background.color = (0.8, 0.8, 0.8)
+gray_background.set_text_format('fontSize', 12)
+gray_background.set_text_format('bold', True)
+gray_background.set_text_format('fontFamily', 'Arial')
+gray_background.horizontal_alignment = pygsheets.HorizontalAlignment.CENTER
+gray_background.vertical_alignment = pygsheets.VerticalAlignment.MIDDLE
+
+red_text = pygsheets.Cell('A1')
+red_text.set_text_format('foregroundColor', {'red': 1, 'green': 0, 'blue': 0})
+red_text.set_text_format('fontSize', 12)
+red_text.set_text_format('bold', True)
+red_text.set_text_format('fontFamily', 'Arial')
+red_text.horizontal_alignment = pygsheets.HorizontalAlignment.CENTER
+red_text.vertical_alignment = pygsheets.VerticalAlignment.MIDDLE
+
+blue_text = pygsheets.Cell('A1')
+blue_text.set_text_format('foregroundColor', {'red': 0, 'green': 0, 'blue': 1})
+blue_text.set_text_format('fontSize', 12)
+blue_text.set_text_format('bold', True)
+blue_text.set_text_format('fontFamily', 'Arial')
+blue_text.horizontal_alignment = pygsheets.HorizontalAlignment.CENTER
+blue_text.vertical_alignment = pygsheets.VerticalAlignment.MIDDLE
+
+normal_template = pygsheets.Cell('A1')
+normal_template.set_text_format('fontSize', 12)
+normal_template.set_text_format('bold', True)
+normal_template.set_text_format('fontFamily', 'Arial')
+normal_template.horizontal_alignment = pygsheets.HorizontalAlignment.CENTER
+normal_template.vertical_alignment = pygsheets.VerticalAlignment.MIDDLE
+
+# 寫入數據並格式化
+for account, details in market_data.items():
+    # 批量應用格式
+    for col in range(start_col, start_col + 5):
+        col_mod = (col - start_col) % 5
+        start_addr = pygsheets.format_addr((1, col))
+        end_addr = pygsheets.format_addr((1000, col))
+        range_format = pygsheets.datarange.DataRange(start=start_addr, end=end_addr, worksheet=wks)
+        
+        if col_mod == 0 or col_mod == 2:  # A, C...
+            range_format.apply_format(gray_background)
+        elif col_mod == 1:  # B...
+            range_format.apply_format(red_text)
+        elif col_mod == 3:  # D...
+            range_format.apply_format(blue_text)
+        elif col_mod == 4:  # E...
+            range_format.apply_format(normal_template)
+
+        start_addr = pygsheets.format_addr((1, col))
+        end_addr = pygsheets.format_addr((2, col))
+        head_format = pygsheets.datarange.DataRange(start=start_addr, end=end_addr, worksheet=wks)
+        head_format.update_borders(top=True, bottom=True, left=True, right=True, style='SOLID')
+
+        start_addr = pygsheets.format_addr((3, col))
+        end_addr = pygsheets.format_addr((4, col))
+        head02_format = pygsheets.datarange.DataRange(start=start_addr, end=end_addr, worksheet=wks)
+        head02_format.update_borders(top=True, bottom=True, left=True, right=True, style='SOLID')
+
+        range_format.update_borders(top=True, bottom=True, left=True, right=True, style='SOLID')
+
+    if account in user_data:
+        user_info = user_data[account]
+        print(user_info)
+
+        # 寫入用戶編號和名稱
+        wks.update_value((1, start_col), list(user_info.keys())[0])
+        wks.update_value((2, start_col), list(user_info.values())[0])
+
+        # 寫入標題和公式
+        wks.update_value((3, start_col), '總計')
+        sum_formula = f"=SUM({excel_col(start_col + 1)}5:{excel_col(start_col + 1)}1000)"
+        wks.update_value((3, start_col + 1), sum_formula)
+        wks.update_value((4, start_col), '日期')
+        wks.update_value((4, start_col + 1), '轉出')
+        
+        row = 5
+        # 寫入日期和金額
+        for date, amount in details:
+            wks.update_value((row, start_col), date)
+            wks.update_value((row, start_col + 1), amount)
+            row += 1
+        
+        # 加入額外的標題和公式
+        wks.update_value((3, start_col + 2), '總計')
+        sum_formula_in = f"=SUM({excel_col(start_col + 3)}5:{excel_col(start_col + 3)}1000)"
+        wks.update_value((3, start_col + 3), sum_formula_in)
+        wks.update_value((4, start_col + 2), '日期')
+        wks.update_value((4, start_col + 3), '轉入')
+        wks.update_value((3, start_col + 4), '備註')
+
+        # 合併儲存格
+        wks.merge_cells(start=f'{excel_col(start_col)}1', end=f'{excel_col(start_col + 4)}1', merge_type='MERGE_ALL')
+        wks.merge_cells(start=f'{excel_col(start_col)}2', end=f'{excel_col(start_col + 4)}2', merge_type='MERGE_ALL')  
+        wks.merge_cells(start=f'{excel_col(start_col + 4)}3', end=f'{excel_col(start_col + 4)}4', merge_type='MERGE_ALL')
+
+        # 移動到右邊五列
+        start_col += 5
+        
+
+
+print("數據寫入完成！")

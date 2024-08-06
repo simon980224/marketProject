@@ -49,9 +49,9 @@ def set_font_and_adjust_dimensions(file_path, size=20):
     workbook.save(file_path)
 
 def main():
-    scripts = ['005requests.py', '027requests.py']
     script_dir = '/Users/chenyaoxuan/Desktop/myproject/MarketProject/src/scripts'
     user_info_path = '/Users/chenyaoxuan/Desktop/myproject/MarketProject/userInfo.json'
+    scripts = [f for f in os.listdir(script_dir) if f.endswith('requests.py')]
     
     # 讀取用戶資訊
     user_info = load_user_info(user_info_path)
@@ -123,7 +123,7 @@ def main():
 
         # 為每個擁有者生成單獨的Excel文件名
         output_file_name = f'{today_date_str}_{owner}_蝦皮提款記錄.xlsx'
-        output_file_path = os.path.join('/Users/chenyaoxuan/Desktop/', output_file_name)
+        output_file_path = os.path.join('/Users/chenyaoxuan/Desktop/myproject/MarketProject/marketExcel/', output_file_name)
 
         # 將DataFrame寫入Excel文件
         df.to_excel(output_file_path, index=False)

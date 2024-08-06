@@ -50,8 +50,8 @@ def set_font_and_adjust_dimensions(file_path, size=20):
 
 def main():
     scripts = ['005requests.py', '027requests.py']
-    script_dir = '/Users/chenyaoxuan/Desktop/myproject/marketProject/src/scripts'
-    user_info_path = '/Users/chenyaoxuan/Desktop/myproject/marketProject/userInfo.json'
+    script_dir = '/Users/chenyaoxuan/Desktop/myproject/MarketProject/src/scripts'
+    user_info_path = '/Users/chenyaoxuan/Desktop/myproject/MarketProject/userInfo.json'
     
     # 讀取用戶資訊
     user_info = load_user_info(user_info_path)

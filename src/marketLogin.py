@@ -19,7 +19,7 @@ userName = 'willy200899'
 passWord = 'Chen54321.'
 
 # 讀取和處理 cookies
-with open('/Users/chenyaoxuan/Desktop/myproject/marketProject/cookies/A27.json', 'r', encoding='utf-8') as file:
+with open('/Users/chenyaoxuan/Desktop/myproject/MarketProject/cookies/A27.json', 'r', encoding='utf-8') as file:
     cookies_list = json.load(file)
 
 # 複製一份 cookies_list 用於追蹤未添加的 cookies
